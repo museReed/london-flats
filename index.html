@@ -10,6 +10,42 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0c111b;--cd:#161d2e;--bd:#252f45;--tx:#e0e6f0;--mt:#7b8ba8;--ac:#38bdf8;--gn:#4ade80;--rd:#f87171;--yw:#fbbf24}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);padding:16px;padding-top:0;line-height:1.5}
+/* Landing page */
+.landing{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:40px 20px;transition:opacity .4s ease,transform .4s ease}
+.landing.hide{opacity:0;transform:translateY(-30px);pointer-events:none}
+.landing-inner{max-width:680px;width:100%;text-align:center}
+.l-emoji{font-size:4rem;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(56,189,248,.3))}
+.l-title{font-size:2.2rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--ac),#a78bfa,var(--gn));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.l-sub{font-size:1rem;color:var(--mt);margin-bottom:36px;line-height:1.6}
+.l-sub strong{color:var(--tx)}
+.l-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:36px}
+.l-stat{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px 16px;min-width:80px;text-align:center;transition:all .2s}
+.l-stat:hover{border-color:var(--ac);transform:translateY(-2px)}
+.l-stat-n{font-size:1.6rem;font-weight:800}
+.l-stat-l{font-size:.65rem;color:var(--mt);margin-top:2px}
+.l-stat.accent .l-stat-n{color:var(--ac)}
+.l-stat.green .l-stat-n{color:var(--gn)}
+.l-platforms{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:40px}
+.l-platform{padding:6px 14px;border-radius:6px;font-size:.72rem;font-weight:700;letter-spacing:.3px}
+.l-features{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:40px;text-align:left}
+.l-feat{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:16px}
+.l-feat-icon{font-size:1.4rem;margin-bottom:6px}
+.l-feat-title{font-size:.82rem;font-weight:700;margin-bottom:3px}
+.l-feat-desc{font-size:.7rem;color:var(--mt);line-height:1.4}
+.l-cta{display:flex;flex-direction:column;align-items:center;gap:10px}
+.l-cta-main{background:var(--ac);color:var(--bg);border:none;padding:14px 40px;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(56,189,248,.3)}
+.l-cta-main:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(56,189,248,.4)}
+.l-cta-login{background:transparent;border:1px solid var(--bd);color:var(--mt);padding:10px 28px;border-radius:8px;font-size:.82rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.l-cta-login:hover{border-color:var(--ac);color:var(--ac)}
+.l-cta-login img{width:16px;height:16px}
+.l-footer{margin-top:32px;font-size:.65rem;color:var(--bd)}
+@media(max-width:768px){
+  .l-title{font-size:1.6rem}
+  .l-sub{font-size:.88rem}
+  .l-features{grid-template-columns:1fr}
+  .l-stat{min-width:60px;padding:8px 10px}
+  .l-stat-n{font-size:1.2rem}
+}
 /* Sticky bar — two rows */
 .sticky-bar{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--bd);margin:0 -16px;padding:0 16px}
 /* Row 1: header + tabs + stats */
@@ -180,6 +216,32 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 </style>
 </head>
 <body>
+<div class="landing" id="landingPage">
+<div class="landing-inner">
+  <div class="l-emoji">🏠</div>
+  <h1 class="l-title">倫敦找房，一次搞定</h1>
+  <p class="l-sub">自動彙整 <strong>6 大租屋平台</strong>，每日更新<br/>智能篩選、符合度評分，幫你找到最適合的房源</p>
+  <div class="l-stats" id="landingStats"></div>
+  <div class="l-platforms">
+    <span class="l-platform" style="background:#0066FF;color:#fff">OpenRent</span>
+    <span class="l-platform" style="background:#00DEB6;color:#000">Rightmove</span>
+    <span class="l-platform" style="background:#E8435A;color:#fff">OnTheMarket</span>
+    <span class="l-platform" style="background:#72EF36;color:#000">Gumtree</span>
+    <span class="l-platform" style="background:#00BCD4;color:#fff">SpareRoom</span>
+    <span class="l-platform" style="background:#8046F1;color:#fff">Zoopla</span>
+  </div>
+  <div class="l-features">
+    <div class="l-feat"><div class="l-feat-icon">🔍</div><div class="l-feat-title">智能篩選</div><div class="l-feat-desc">預算、房型、Zone、傢俱、Short Let — 一鍵篩出符合條件的房源</div></div>
+    <div class="l-feat"><div class="l-feat-icon">⭐</div><div class="l-feat-title">符合度評分</div><div class="l-feat-desc">自動計算每間房源與你需求的匹配程度，高分優先排序</div></div>
+    <div class="l-feat"><div class="l-feat-icon">❤️</div><div class="l-feat-title">跨裝置收藏</div><div class="l-feat-desc">Google 登入後，收藏房源自動同步，手機電腦都能看</div></div>
+  </div>
+  <div class="l-cta">
+    <button class="l-cta-main" onclick="enterApp()">開始找房 →</button>
+    <button class="l-cta-login" onclick="handleAuth()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"/>Google 登入，解鎖完整功能</button>
+  </div>
+  <div class="l-footer">每日自動更新 · 資料來自 Rightmove / Zoopla / OnTheMarket / OpenRent / SpareRoom / Gumtree</div>
+</div>
+</div>
 <div class="sticky-bar" id="stickyBar">
 <div class="sb-r1">
   <span class="sb-title">🏠 倫敦找房</span>
@@ -800,10 +862,38 @@ document.addEventListener('touchstart', function(e) { const gal = e.target.close
 document.addEventListener('touchend', function(e) { const gal = e.target.closest('.gal'); if (!gal || !gal._tx) return; const dx = e.changedTouches[0].clientX - gal._tx; if (Math.abs(dx) > 50) galNav(gal.querySelector('.gr'), dx < 0 ? 1 : -1); gal._tx = null; }, { passive: true });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMap(); closeDrawer(); } });
 
+// ═══ Landing Page ═══
+function enterApp() {
+  const lp = document.getElementById('landingPage');
+  lp.classList.add('hide');
+  setTimeout(() => lp.style.display = 'none', 400);
+  sessionStorage.setItem('skipLanding', '1');
+}
+
+function populateLandingStats() {
+  const el = document.getElementById('landingStats');
+  if (!el || !allProperties.length) return;
+  const counts = {};
+  SOURCE_ORDER.forEach(s => { counts[s] = allProperties.filter(p => p.source === s).length; });
+  const highMatch = allProperties.filter(p => p._score >= p._scoreTotal - 1 && p._scoreTotal > 0).length;
+  el.innerHTML =
+    '<div class="l-stat accent"><div class="l-stat-n">' + allProperties.length + '</div><div class="l-stat-l">總房源</div></div>' +
+    SOURCE_ORDER.filter(s => counts[s] > 0).map(s =>
+      '<div class="l-stat"><div class="l-stat-n" style="color:' + (SOURCE_STYLES[s]?.bg || 'var(--tx)') + '">' + counts[s] + '</div><div class="l-stat-l">' + s + '</div></div>'
+    ).join('') +
+    '<div class="l-stat green"><div class="l-stat-n">' + highMatch + '</div><div class="l-stat-l">⭐ 高符合</div></div>';
+}
+
 // ═══ Init ═══
 (async () => {
   await initAuth();
+  // Skip landing if returning user or logged in
+  if (currentUser || sessionStorage.getItem('skipLanding')) {
+    const lp = document.getElementById('landingPage');
+    lp.style.display = 'none';
+  }
   await loadProperties();
+  populateLandingStats();
 })();
 </script>
 </body></html>
