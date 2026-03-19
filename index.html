@@ -133,6 +133,11 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 .auth-btn{background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;transition:all .15s;white-space:nowrap}
 .auth-btn:hover{border-color:var(--ac);color:var(--ac)}
 .auth-user{font-size:.65rem;color:var(--mt);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Login toast */
+#loginToast{position:fixed;bottom:-60px;left:50%;transform:translateX(-50%);background:var(--cd);border:1px solid var(--ac);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:200;transition:bottom .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.4);font-size:.8rem;white-space:nowrap}
+#loginToast.show{bottom:24px}
+#loginToast button{background:var(--ac);color:var(--bg);border:none;padding:5px 12px;border-radius:5px;cursor:pointer;font-size:.75rem;font-weight:600;white-space:nowrap}
+#loginToast button.dismiss{background:transparent;color:var(--mt);padding:2px 6px;font-size:1rem}
 /* Mobile responsive */
 @media(max-width:768px){
   body{padding:8px;padding-top:0}
@@ -210,6 +215,7 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 <div id="favMap"></div>
 <div class="grid" id="favGrid"></div>
 <div class="fav-empty" id="favEmpty"><div class="fav-icon">💔</div><p>還沒有收藏的房源</p><p style="font-size:.75rem;margin-top:6px;color:var(--bd)">在全部房源頁面點擊愛心即可收藏</p></div>
+<div class="fav-empty" id="favLogin" style="display:none"><div class="fav-icon">🔒</div><p>登入後即可使用收藏功能</p><p style="font-size:.75rem;margin-top:6px;color:var(--mt)">收藏會跨裝置同步，換手機也能看到</p><button class="auth-btn" onclick="handleAuth()" style="margin-top:14px;padding:8px 20px;font-size:.85rem;border-radius:8px;background:var(--ac);color:var(--bg);border:none;cursor:pointer;font-weight:600">Google 登入</button></div>
 </div>
 
 <div class="mo" id="mm" onclick="if(event.target===this)closeMap()">
@@ -449,9 +455,7 @@ async function handleAuth() {
 // ═══ Favorites (Supabase) ═══
 async function loadFavorites() {
   if (!currentUser) {
-    // Fallback to localStorage for non-logged-in users
-    const stored = JSON.parse(localStorage.getItem('londonFlatFavs') || '[]');
-    userFavIds = new Set(stored);
+    userFavIds.clear();
     syncAllHearts();
     updateFavBadge();
     return;
@@ -464,26 +468,34 @@ async function loadFavorites() {
 }
 
 async function toggleFav(btn) {
+  if (!currentUser) { showLoginToast(); return; }
   const card = btn.closest('.card');
   const id = card.dataset.id;
 
   if (userFavIds.has(id)) {
     userFavIds.delete(id);
-    if (currentUser) {
-      await sb.from('favorites').delete().eq('user_id', currentUser.id).eq('property_id', id);
-    }
+    await sb.from('favorites').delete().eq('user_id', currentUser.id).eq('property_id', id);
   } else {
     userFavIds.add(id);
-    if (currentUser) {
-      await sb.from('favorites').insert({ user_id: currentUser.id, property_id: id });
-    }
+    await sb.from('favorites').insert({ user_id: currentUser.id, property_id: id });
   }
 
-  // Also save to localStorage as fallback
-  localStorage.setItem('londonFlatFavs', JSON.stringify([...userFavIds]));
   syncAllHearts();
   updateFavBadge();
   if (document.getElementById('pageFavs').classList.contains('active')) renderFavPage();
+}
+
+function showLoginToast() {
+  let t = document.getElementById('loginToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'loginToast';
+    t.innerHTML = '<span>💡 登入後即可收藏房源</span><button onclick="handleAuth()">Google 登入</button><button class="dismiss" onclick="this.parentElement.classList.remove(\'show\')">✕</button>';
+    document.body.appendChild(t);
+  }
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 5000);
 }
 
 function syncAllHearts() {
@@ -637,9 +649,17 @@ function createHouseIcon() { return L.divIcon({ html: '<div style="font-size:1.6
 async function renderFavPage() {
   const grid = document.getElementById('favGrid');
   const empty = document.getElementById('favEmpty');
+  const loginPrompt = document.getElementById('favLogin');
   const statsEl = document.getElementById('favStats');
   const mapEl = document.getElementById('favMap');
   grid.innerHTML = '';
+
+  if (!currentUser) {
+    empty.style.display = 'none'; loginPrompt.style.display = '';
+    mapEl.style.display = 'none'; statsEl.innerHTML = '';
+    if (favMap) { favMap.remove(); favMap = null; } return;
+  }
+  loginPrompt.style.display = 'none';
 
   const favCards = [];
   document.querySelectorAll('#searchGrid .card').forEach(c => {
