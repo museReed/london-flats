@@ -9,16 +9,26 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0c111b;--cd:#161d2e;--bd:#252f45;--tx:#e0e6f0;--mt:#7b8ba8;--ac:#38bdf8;--gn:#4ade80;--rd:#f87171;--yw:#fbbf24}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);padding:16px;padding-top:0;line-height:1.5}
-.header{text-align:center;padding:12px 0 8px}
-h1{font-size:1.5rem;margin-bottom:4px;background:linear-gradient(135deg,var(--ac),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sub{color:var(--mt);font-size:.78rem;margin-bottom:8px}
-.stats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
-.stat{background:var(--cd);border-radius:6px;padding:6px 12px;text-align:center;min-width:70px}
-.stat-n{font-size:1.2rem;font-weight:700;color:var(--ac)}
-.stat-l{font-size:.6rem;color:var(--mt)}
-/* Sticky bar */
+/* Sticky bar — two rows */
 .sticky-bar{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--bd);margin:0 -16px;padding:0 16px}
-.sb-row{display:flex;align-items:center;gap:8px;padding:8px 0;min-height:44px}
+/* Row 1: header + tabs + stats */
+.sb-r1{display:flex;align-items:center;gap:8px;padding:6px 0 4px;flex-wrap:nowrap;overflow-x:auto;min-height:36px}
+.sb-title{font-size:.95rem;font-weight:700;background:linear-gradient(135deg,var(--ac),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;flex-shrink:0}
+.sb-tabs{display:flex;gap:0;flex-shrink:0}
+.sb-tabs .page-tab{padding:4px 14px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:var(--cd);color:var(--mt);transition:all .15s;user-select:none}
+.sb-tabs .page-tab:first-child{border-radius:5px 0 0 5px}
+.sb-tabs .page-tab:last-child{border-radius:0 5px 5px 0}
+.sb-tabs .page-tab.active{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+.sb-tabs .page-tab .tab-badge{display:inline-block;background:rgba(255,255,255,.2);padding:0 5px;border-radius:8px;font-size:.6rem;margin-left:4px}
+.sb-tabs .page-tab.active .tab-badge{background:rgba(0,0,0,.2)}
+.sb-stats{display:flex;gap:4px;flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sb-stats::-webkit-scrollbar{display:none}
+.stat{background:var(--cd);border-radius:5px;padding:3px 8px;text-align:center;min-width:50px;flex-shrink:0}
+.stat-n{font-size:.85rem;font-weight:700;color:var(--ac)}
+.stat-l{font-size:.52rem;color:var(--mt)}
+.sb-r1-spacer{flex:1;min-width:4px}
+/* Row 2: filter + sort */
+.sb-row{display:flex;align-items:center;gap:8px;padding:4px 0 6px;min-height:36px}
 .sb-count{font-size:.82rem;font-weight:700;color:var(--ac);white-space:nowrap}
 .sb-toggle{background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.75rem;font-weight:600;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:4px}
 .sb-toggle:hover{border-color:var(--ac);color:var(--ac)}
@@ -52,14 +62,7 @@ h1{font-size:1.5rem;margin-bottom:4px;background:linear-gradient(135deg,var(--ac
 .fp-btn.primary:hover{opacity:.85}
 .fp-btn.ghost{background:transparent;border:1px solid var(--bd);color:var(--mt)}
 .fp-btn.ghost:hover{border-color:var(--ac);color:var(--ac)}
-/* Page tabs */
-.page-tabs{display:flex;justify-content:center;gap:0;margin-bottom:12px}
-.page-tab{padding:8px 24px;font-size:.85rem;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:var(--cd);color:var(--mt);transition:all .15s;user-select:none}
-.page-tab:first-child{border-radius:8px 0 0 8px}
-.page-tab:last-child{border-radius:0 8px 8px 0}
-.page-tab.active{background:var(--ac);color:var(--bg);border-color:var(--ac)}
-.page-tab .tab-badge{display:inline-block;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;font-size:.7rem;margin-left:6px}
-.page-tab.active .tab-badge{background:rgba(0,0,0,.2)}
+/* Page visibility */
 .page{display:none}
 .page.active{display:block}
 /* Cards grid */
@@ -123,45 +126,42 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 /* Mobile responsive */
 @media(max-width:768px){
   body{padding:8px;padding-top:0}
-  .header{padding:8px 0 4px}
-  h1{font-size:1.2rem}
-  .stats{gap:4px;margin-bottom:6px}
-  .stat{padding:4px 8px;min-width:55px}
-  .stat-n{font-size:1rem}
-  .stat-l{font-size:.55rem}
   .sticky-bar{margin:0 -8px;padding:0 8px}
+  .sb-r1{gap:6px;padding:4px 0 2px;min-height:30px}
+  .sb-title{font-size:.8rem}
+  .sb-tabs .page-tab{padding:3px 10px;font-size:.65rem}
+  .sb-stats{gap:3px}
+  .stat{padding:2px 6px;min-width:40px}
+  .stat-n{font-size:.72rem}
+  .stat-l{font-size:.48rem}
+  .sb-row{padding:3px 0 5px;min-height:32px}
   .sb-sort-btns{display:none}
-  .sb-sort-sel{display:block;background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.72rem;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237b8ba8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:22px}
+  .sb-sort-sel{display:block;background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:4px 6px;border-radius:5px;font-size:.68rem;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237b8ba8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px}
   .filter-drawer{margin:0 -8px;padding:0 8px}
   .filter-drawer.open{max-height:60vh;padding:10px 8px}
   .fp-grid{grid-template-columns:1fr}
   .fp-chip{font-size:.65rem;padding:3px 8px}
   .grid{grid-template-columns:1fr;gap:10px}
-  .page-tab{padding:8px 16px;font-size:.8rem}
   #favMap{height:300px}
 }
 </style>
 </head>
 <body>
-<div class="header">
-<h1>🏠 倫敦找房比較表</h1>
-<p class="sub">6 大平台 × 每日自動更新 | 2026/3/19 上午12:01:32 London</p>
-</div>
-
-<div class="page-tabs">
-<div class="page-tab active" onclick="switchPage('search',this)">🔍 全部房源 <span class="tab-badge">432</span></div>
-<div class="page-tab" onclick="switchPage('favs',this)">❤️ 我的最愛 <span class="tab-badge" id="favTabCount">0</span></div>
-</div>
-
-<div class="page active" id="pageSearch">
-<div class="stats">
-<div class="stat"><div class="stat-n">432</div><div class="stat-l">總房源</div></div>
-<div class="stat"><div class="stat-n">320</div><div class="stat-l">OpenRent</div></div><div class="stat"><div class="stat-n">25</div><div class="stat-l">Rightmove</div></div><div class="stat"><div class="stat-n">28</div><div class="stat-l">OnTheMarket</div></div><div class="stat"><div class="stat-n">30</div><div class="stat-l">Gumtree</div></div><div class="stat"><div class="stat-n">1</div><div class="stat-l">SpareRoom</div></div><div class="stat"><div class="stat-n">28</div><div class="stat-l">Zoopla</div></div>
-<div class="stat"><div class="stat-n">40</div><div class="stat-l">⭐高符合</div></div>
-</div>
-
 <div class="sticky-bar" id="stickyBar">
-<div class="sb-row">
+<div class="sb-r1">
+  <span class="sb-title">🏠 倫敦找房</span>
+  <div class="sb-tabs">
+    <div class="page-tab active" onclick="switchPage('search',this)">🔍 全部房源 <span class="tab-badge">432</span></div>
+    <div class="page-tab" onclick="switchPage('favs',this)">❤️ 我的最愛 <span class="tab-badge" id="favTabCount">0</span></div>
+  </div>
+  <span class="sb-r1-spacer"></span>
+  <div class="sb-stats" id="statsRow">
+    <div class="stat"><div class="stat-n">432</div><div class="stat-l">總房源</div></div>
+    <div class="stat"><div class="stat-n">320</div><div class="stat-l">OpenRent</div></div><div class="stat"><div class="stat-n">25</div><div class="stat-l">Rightmove</div></div><div class="stat"><div class="stat-n">28</div><div class="stat-l">OnTheMarket</div></div><div class="stat"><div class="stat-n">30</div><div class="stat-l">Gumtree</div></div><div class="stat"><div class="stat-n">1</div><div class="stat-l">SpareRoom</div></div><div class="stat"><div class="stat-n">28</div><div class="stat-l">Zoopla</div></div>
+    <div class="stat"><div class="stat-n">40</div><div class="stat-l">⭐高符合</div></div>
+  </div>
+</div>
+<div class="sb-row" id="searchBar">
   <span class="sb-count" id="filterCount">432 間房源</span>
   <button class="sb-toggle" id="sbToggle" onclick="toggleDrawer()"><span class="arrow">▼</span> 篩選</button>
   <span class="sb-spacer"></span>
@@ -190,6 +190,7 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 </div>
 <div class="filter-overlay" id="filterOverlay" onclick="closeDrawer()"></div>
 
+<div class="page active" id="pageSearch">
 <div class="grid">
 <div class="card" data-id="OpenRent-2824660" data-src="openrent" data-t="studio" data-sc="6" data-st="6" data-price="1500" data-budget="1" data-typematch="1" data-furn="1" data-kitchen="1" data-zone3="1" data-short="1" data-feat="parking,gym,garden,bills included" data-addr="Studio Flat, Chapter Southbank, SE1" data-beds="Studio" data-link="https://www.openrent.co.uk/2824660" data-lat="51.5075307" data-lng="-0.0971617">
 <button class="heart" onclick="toggleFav(this)" title="加入最愛">🤍</button>
@@ -5840,7 +5841,7 @@ function toggleFav(btn){const card=btn.closest('.card');const id=card.dataset.id
 function syncAllHearts(){document.querySelectorAll('.card').forEach(c=>{const btn=c.querySelector('.heart');if(!btn)return;if(isFav(c.dataset.id)){btn.textContent='❤️';btn.classList.add('liked')}else{btn.textContent='🤍';btn.classList.remove('liked')}})}
 function updateFavBadge(){document.getElementById('favTabCount').textContent=favs.length}
 let _scrollPos={};
-function switchPage(page,tab){const cur=document.querySelector('.page.active');if(cur)_scrollPos[cur.id]=window.scrollY;document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));closeDrawer();if(page==='search'){document.getElementById('pageSearch').classList.add('active');requestAnimationFrame(()=>window.scrollTo(0,_scrollPos.pageSearch||0))}else{document.getElementById('pageFavs').classList.add('active');renderFavPage();requestAnimationFrame(()=>window.scrollTo(0,_scrollPos.pageFavs||0))}}
+function switchPage(page,tab){const cur=document.querySelector('.page.active');if(cur)_scrollPos[cur.id]=window.scrollY;document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));closeDrawer();const searchBar=document.getElementById('searchBar');const statsRow=document.getElementById('statsRow');if(page==='search'){document.getElementById('pageSearch').classList.add('active');searchBar.style.display='';statsRow.style.display='';requestAnimationFrame(()=>window.scrollTo(0,_scrollPos.pageSearch||0))}else{document.getElementById('pageFavs').classList.add('active');searchBar.style.display='none';statsRow.style.display='none';renderFavPage();requestAnimationFrame(()=>window.scrollTo(0,_scrollPos.pageFavs||0))}}
 let favMap=null;let favMarkers=[];
 function createHouseIcon(){return L.divIcon({html:'<div style="font-size:1.6rem;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))">🏠</div>',className:'',iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-28]})}
 async function renderFavPage(){const grid=document.getElementById('favGrid');const empty=document.getElementById('favEmpty');const statsEl=document.getElementById('favStats');const mapEl=document.getElementById('favMap');grid.innerHTML='';const favCards=[];document.querySelectorAll('#pageSearch .card').forEach(c=>{if(isFav(c.dataset.id))favCards.push(c)});if(favCards.length===0){empty.style.display='';mapEl.style.display='none';statsEl.innerHTML='';if(favMap){favMap.remove();favMap=null}return}empty.style.display='none';mapEl.style.display='';const prices=favCards.map(c=>+c.dataset.price).filter(p=>p>0);const avgPrice=prices.length?Math.round(prices.reduce((a,b)=>a+b,0)/prices.length):0;statsEl.innerHTML=`<div class="stat"><div class="stat-n">${favCards.length}</div><div class="stat-l">收藏數</div></div><div class="stat"><div class="stat-n">£${avgPrice}</div><div class="stat-l">平均租金</div></div><div class="stat"><div class="stat-n">£${prices.length?Math.min(...prices):0}</div><div class="stat-l">最低</div></div><div class="stat"><div class="stat-n">£${prices.length?Math.max(...prices):0}</div><div class="stat-l">最高</div></div>`;if(favMap){favMap.remove();favMap=null}favMap=L.map('favMap',{zoomControl:true,scrollWheelZoom:true}).setView([51.505,-0.09],12);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:19,subdomains:'abcd'}).addTo(favMap);favMarkers=[];const bounds=L.latLngBounds();let placed=0;for(const c of favCards){const lat=parseFloat(c.dataset.lat);const lng=parseFloat(c.dataset.lng);if(!lat||!lng)continue;const addr=c.dataset.addr||'';const price=c.dataset.price||'?';const beds=c.dataset.beds||'?';const link=c.dataset.link||'#';const src=c.dataset.src||'';const marker=L.marker([lat,lng],{icon:createHouseIcon()}).addTo(favMap);marker.bindPopup(`<div style="font-size:.8rem;min-width:160px"><div style="font-weight:700;color:#16a34a;font-size:1rem;margin-bottom:2px">£${price} pcm</div><div style="margin-bottom:4px">${beds} · ${src}</div><div style="font-size:.72rem;color:#666;margin-bottom:6px">📍 ${addr}</div><a href="${link}" target="_blank" style="color:#2563eb;font-size:.72rem">查看房源 →</a></div>`,{closeButton:true,maxWidth:250});marker.bindTooltip(`<span class="map-label"><span class="ml-price">£${price}</span><span class="ml-beds">${beds}</span></span>`,{permanent:true,direction:'top',offset:[0,-30],className:''});bounds.extend([lat,lng]);favMarkers.push(marker);placed++}if(placed>0){favMap.fitBounds(bounds,{padding:[50,50],maxZoom:14})}setTimeout(()=>{if(favMap)favMap.invalidateSize()},200);favCards.forEach(c=>{const clone=c.cloneNode(true);const heart=clone.querySelector('.heart');if(heart){heart.onclick=function(){toggleFav(this)}}grid.appendChild(clone)})}
