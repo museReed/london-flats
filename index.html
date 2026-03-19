@@ -93,6 +93,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fp-range input[type=range]{flex:1;min-width:60px;accent-color:var(--ac);height:4px;-webkit-appearance:none;background:var(--bd);border-radius:2px;outline:none}
 .fp-range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ac);cursor:pointer}
 .fp-range .fp-val{font-size:.75rem;font-weight:700;color:var(--ac);min-width:38px;text-align:center}
+.fp-score-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.fp-score-tag{font-size:.65rem;padding:2px 8px;border-radius:4px;background:rgba(56,189,248,.1);color:var(--ac);border:1px solid rgba(56,189,248,.2)}
+.fp-score-tag.optional{background:rgba(251,191,36,.1);color:var(--yw);border-color:rgba(251,191,36,.2)}
 .fp-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)}
 .fp-btn{padding:6px 16px;border-radius:5px;border:none;cursor:pointer;font-size:.75rem;font-weight:600;transition:all .15s}
 .fp-btn.primary{background:var(--ac);color:var(--bg)}
@@ -279,7 +282,7 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
   <div class="fp-sec"><h4>🏠 平台</h4><div class="fp-chips" id="srcChips"></div></div>
   <div class="fp-sec"><h4>🛏️ 房型</h4><div class="fp-chips" id="typeChips"><div class="fp-chip on" data-val="studio">Studio</div><div class="fp-chip on" data-val="1bed">1 Bed</div><div class="fp-chip on" data-val="2bed">2 Bed</div><div class="fp-chip on" data-val="other">其他</div></div></div>
   <div class="fp-sec"><h4>✅ 條件要求</h4><div class="fp-chips" id="reqChips"><div class="fp-chip" data-val="kitchen">🍳 可開伙</div><div class="fp-chip" data-val="furnished">🪑 有傢俱</div><div class="fp-chip" data-val="zone3">📍 Zone≤3</div><div class="fp-chip" data-val="shortlet">📅 Short Let</div></div></div>
-  <div class="fp-sec"><h4>⭐ 最低符合度</h4><div class="fp-range"><span class="fp-val" id="scoreVal">0/6</span><input type="range" id="scoreMin" min="0" max="6" step="1" value="0" oninput="onFilterChange()"/></div></div>
+  <div class="fp-sec"><h4>⭐ 最低符合度</h4><div class="fp-range"><span class="fp-val" id="scoreVal">0/6</span><input type="range" id="scoreMin" min="0" max="6" step="1" value="0" oninput="onFilterChange()"/></div><div class="fp-score-tags" id="scoreTags"></div></div>
   <div class="fp-sec"><h4>🏷️ 特色篩選</h4><div class="fp-chips" id="featChips"><div class="fp-chip" data-val="balcony">Balcony</div><div class="fp-chip" data-val="parking">Parking</div><div class="fp-chip" data-val="garden">Garden</div><div class="fp-chip" data-val="gym">Gym</div><div class="fp-chip" data-val="bills included">Bills Included</div><div class="fp-chip" data-val="dishwasher">Dishwasher</div><div class="fp-chip" data-val="washer">Washer</div></div></div>
   </div>
   <div class="fp-actions"><button class="fp-btn primary" onclick="onFilterChange();closeDrawer()">套用篩選</button><button class="fp-btn ghost" onclick="resetFilters()">重置全部</button></div>
@@ -690,6 +693,13 @@ function onFilterChange() {
   if (+scoreSlider.value > sliderMax) scoreSlider.value = sliderMax;
   const sMin = +scoreSlider.value;
   document.getElementById('scoreVal').textContent = sMin + '/' + sliderMax;
+
+  // Show which criteria are counted in score
+  const reqLabels = { kitchen: '🍳 可開伙', furnished: '🪑 有傢俱', zone3: '📍 Zone≤3', shortlet: '📅 Short Let' };
+  const scoreTags = document.getElementById('scoreTags');
+  let tagsHtml = '<span class="fp-score-tag">💰 預算</span><span class="fp-score-tag">🛏️ 房型</span>';
+  reqs.forEach(r => { if (reqLabels[r]) tagsHtml += '<span class="fp-score-tag optional">' + reqLabels[r] + '</span>'; });
+  scoreTags.innerHTML = tagsHtml;
 
   document.querySelectorAll('#pageSearch .cg-item').forEach(el => {
     const cri = el.dataset.cri;
