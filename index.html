@@ -133,11 +133,19 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 .auth-btn{background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;transition:all .15s;white-space:nowrap}
 .auth-btn:hover{border-color:var(--ac);color:var(--ac)}
 .auth-user{font-size:.65rem;color:var(--mt);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Login toast */
-#loginToast{position:fixed;bottom:-60px;left:50%;transform:translateX(-50%);background:var(--cd);border:1px solid var(--ac);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:200;transition:bottom .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.4);font-size:.8rem;white-space:nowrap}
-#loginToast.show{bottom:24px}
-#loginToast button{background:var(--ac);color:var(--bg);border:none;padding:5px 12px;border-radius:5px;cursor:pointer;font-size:.75rem;font-weight:600;white-space:nowrap}
-#loginToast button.dismiss{background:transparent;color:var(--mt);padding:2px 6px;font-size:1rem}
+/* Login toast — centered modal */
+#loginToast{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;pointer-events:none;opacity:0;transition:opacity .25s ease}
+#loginToast.show{opacity:1;pointer-events:auto}
+#loginToast .toast-bg{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+#loginToast .toast-box{position:relative;background:var(--cd);border:1px solid var(--ac);border-radius:14px;padding:28px 32px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:320px;width:90%;animation:toastPop .25s ease}
+@keyframes toastPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+#loginToast .toast-icon{font-size:2.2rem;margin-bottom:8px}
+#loginToast .toast-msg{font-size:.88rem;margin-bottom:4px;font-weight:600}
+#loginToast .toast-sub{font-size:.72rem;color:var(--mt);margin-bottom:16px}
+#loginToast .toast-login{background:var(--ac);color:var(--bg);border:none;padding:9px 24px;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:700;transition:opacity .15s;width:100%}
+#loginToast .toast-login:hover{opacity:.85}
+#loginToast .toast-dismiss{background:transparent;border:none;color:var(--mt);cursor:pointer;font-size:.75rem;margin-top:10px;padding:4px 8px}
+#loginToast .toast-dismiss:hover{color:var(--tx)}
 /* Mobile responsive */
 @media(max-width:768px){
   body{padding:8px;padding-top:0}
@@ -490,12 +498,14 @@ function showLoginToast() {
   if (!t) {
     t = document.createElement('div');
     t.id = 'loginToast';
-    t.innerHTML = '<span>💡 登入後即可收藏房源</span><button onclick="handleAuth()">Google 登入</button><button class="dismiss" onclick="this.parentElement.classList.remove(\'show\')">✕</button>';
+    t.innerHTML = '<div class="toast-bg" onclick="dismissToast()"></div><div class="toast-box"><div class="toast-icon">💡</div><div class="toast-msg">登入後即可收藏房源</div><div class="toast-sub">收藏會跨裝置同步，換手機也能看到</div><button class="toast-login" onclick="handleAuth()">Google 登入</button><button class="toast-dismiss" onclick="dismissToast()">稍後再說</button></div>';
     document.body.appendChild(t);
   }
   t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 5000);
+}
+function dismissToast() {
+  const t = document.getElementById('loginToast');
+  if (t) t.classList.remove('show');
 }
 
 function syncAllHearts() {
