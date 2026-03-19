@@ -106,9 +106,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;padding-top:10px}
 .card{background:var(--cd);border:1px solid var(--bd);border-radius:10px;overflow:hidden;transition:transform .2s;position:relative}
 .card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.3)}
-.ci{width:100%;height:200px;object-fit:cover;display:block}
-.ci-ph{width:100%;height:200px;background:var(--bd);display:flex;align-items:center;justify-content:center;color:var(--mt);font-size:.8rem}
-.gal{position:relative;width:100%;height:220px;overflow:hidden;background:var(--bd)}
+.img-wrap{position:relative;width:100%;height:220px;background:var(--bd);overflow:hidden}
+.img-wrap .img-loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:1;transition:opacity .3s}
+.img-wrap .img-loader .spinner{width:24px;height:24px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite}
+.img-wrap .img-loader span{font-size:.65rem;color:var(--mt)}
+.img-wrap.loaded .img-loader{opacity:0;pointer-events:none}
+.ci{width:100%;height:100%;object-fit:cover;display:block}
+.ci-ph{width:100%;height:220px;background:var(--bd);display:flex;align-items:center;justify-content:center;color:var(--mt);font-size:.8rem}
+.gal{position:relative;width:100%;height:100%}
 .gal .gi{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
 .gal .gi.active{opacity:1;position:relative}
 .ga{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.55);color:#fff;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(4px);transition:all .15s}
@@ -464,17 +469,19 @@ function renderCard(p) {
 
   // Image handling — use image_urls from Supabase (JSONB array)
   let imageUrls = Array.isArray(p.image_urls) ? p.image_urls : [];
+  const loader = '<div class="img-loader"><div class="spinner"></div><span>載入圖片中</span></div>';
+  const onLoad = 'onload="this.closest(\'.img-wrap\').classList.add(\'loaded\')"';
   let imageHtml;
   if (imageUrls.length > 1) {
-    imageHtml = '<div class="gal" data-idx="0">' +
-      imageUrls.map((img, i) => '<img class="gi' + (i === 0 ? ' active' : '') + '" src="' + img + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy"/>').join('') +
+    imageHtml = '<div class="img-wrap">' + loader + '<div class="gal" data-idx="0">' +
+      imageUrls.map((img, i) => '<img class="gi' + (i === 0 ? ' active' : '') + '" src="' + img + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + (i === 0 ? onLoad : '') + '/>').join('') +
       '<button class="ga gl" onclick="galNav(this,-1)">‹</button>' +
       '<button class="ga gr" onclick="galNav(this,1)">›</button>' +
-      '<span class="gc">1/' + imageUrls.length + '</span></div>';
+      '<span class="gc">1/' + imageUrls.length + '</span></div></div>';
   } else if (imageUrls.length === 1) {
-    imageHtml = '<img class="ci" src="' + imageUrls[0] + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy"/>';
+    imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + imageUrls[0] + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + '/></div>';
   } else if (p.image_url) {
-    imageHtml = '<img class="ci" src="' + p.image_url + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" onerror="this.style.display=\'none\'"/>';
+    imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + p.image_url + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + ' onerror="this.closest(\'.img-wrap\').classList.add(\'loaded\')" /></div>';
   } else {
     imageHtml = '<div class="ci-ph">🔗 點擊連結查看圖片</div>';
   }
