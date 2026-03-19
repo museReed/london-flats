@@ -170,9 +170,6 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 .auth-btn:hover{border-color:var(--ac);color:var(--ac)}
 .auth-user{font-size:.65rem;color:var(--mt);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Load more / login wall */
-.grid-footer{text-align:center;padding:32px 20px;grid-column:1/-1}
-.load-more-btn{background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:10px 32px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .15s}
-.load-more-btn:hover{border-color:var(--ac);color:var(--ac)}
 .login-wall{background:linear-gradient(to bottom,transparent,var(--bg) 30%);padding:60px 20px 40px;text-align:center;margin-top:-60px;position:relative}
 .login-wall .lw-icon{font-size:2.4rem;margin-bottom:10px}
 .login-wall .lw-title{font-size:1rem;font-weight:700;margin-bottom:6px}
@@ -294,9 +291,7 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
   <div class="lw-sub">免費 Google 帳號登入，解鎖全部房源 + 收藏同步功能</div>
   <button class="lw-btn" onclick="handleAuth()">Google 登入</button>
 </div>
-<div style="text-align:center;padding:20px" id="loadMoreWrap" style="display:none">
-  <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreCards()">載入更多房源</button>
-</div>
+<div id="loadMoreSentinel" style="height:1px"></div>
 </div>
 
 <div class="page" id="pageFavs">
@@ -699,7 +694,6 @@ function onFilterChange() {
   let shownCount = 0;
   const maxShow = visiblePages * PAGE_SIZE;
   const loginWall = document.getElementById('loginWall');
-  const loadMoreWrap = document.getElementById('loadMoreWrap');
 
   document.querySelectorAll('#searchGrid .card').forEach(c => {
     const price = +c.dataset.price || 0;
@@ -739,14 +733,8 @@ function onFilterChange() {
   const hasMore = matchCount > shownCount;
   if (hasMore && !currentUser) {
     loginWall.style.display = '';
-    loadMoreWrap.style.display = 'none';
-  } else if (hasMore && currentUser) {
-    loginWall.style.display = 'none';
-    loadMoreWrap.style.display = '';
-    document.getElementById('loadMoreBtn').textContent = '載入更多房源（還有 ' + (matchCount - shownCount) + ' 間）';
   } else {
     loginWall.style.display = 'none';
-    loadMoreWrap.style.display = 'none';
   }
 
   document.getElementById('filterCount').textContent = shownCount + ' / ' + matchCount + ' 間房源';
@@ -756,6 +744,17 @@ function loadMoreCards() {
   visiblePages++;
   onFilterChange();
 }
+
+// Infinite scroll — auto load more when sentinel is visible
+const _scrollObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && currentUser && !document.getElementById('loginWall').offsetParent) {
+    loadMoreCards();
+  }
+}, { rootMargin: '400px' });
+requestAnimationFrame(() => {
+  const sentinel = document.getElementById('loadMoreSentinel');
+  if (sentinel) _scrollObserver.observe(sentinel);
+});
 
 function resetFilters() {
   visiblePages = 1;
