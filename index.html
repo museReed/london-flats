@@ -133,6 +133,16 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 .auth-btn{background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;transition:all .15s;white-space:nowrap}
 .auth-btn:hover{border-color:var(--ac);color:var(--ac)}
 .auth-user{font-size:.65rem;color:var(--mt);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Load more / login wall */
+.grid-footer{text-align:center;padding:32px 20px;grid-column:1/-1}
+.load-more-btn{background:var(--cd);border:1px solid var(--bd);color:var(--tx);padding:10px 32px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .15s}
+.load-more-btn:hover{border-color:var(--ac);color:var(--ac)}
+.login-wall{background:linear-gradient(to bottom,transparent,var(--bg) 30%);padding:60px 20px 40px;text-align:center;margin-top:-60px;position:relative}
+.login-wall .lw-icon{font-size:2.4rem;margin-bottom:10px}
+.login-wall .lw-title{font-size:1rem;font-weight:700;margin-bottom:6px}
+.login-wall .lw-sub{font-size:.78rem;color:var(--mt);margin-bottom:18px}
+.login-wall .lw-btn{background:var(--ac);color:var(--bg);border:none;padding:10px 28px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:700;transition:opacity .15s}
+.login-wall .lw-btn:hover{opacity:.85}
 /* Login toast — centered modal */
 #loginToast{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;pointer-events:none;opacity:0;transition:opacity .25s ease}
 #loginToast.show{opacity:1;pointer-events:auto}
@@ -216,6 +226,15 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
 <div class="page active" id="pageSearch">
 <div class="loading" id="loadingIndicator"><div class="spinner"></div><p>正在載入房源資料...</p></div>
 <div class="grid" id="searchGrid"></div>
+<div class="login-wall" id="loginWall" style="display:none">
+  <div class="lw-icon">🔓</div>
+  <div class="lw-title">登入看更多房源</div>
+  <div class="lw-sub">免費 Google 帳號登入，解鎖全部房源 + 收藏同步功能</div>
+  <button class="lw-btn" onclick="handleAuth()">Google 登入</button>
+</div>
+<div style="text-align:center;padding:20px" id="loadMoreWrap" style="display:none">
+  <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreCards()">載入更多房源</button>
+</div>
 </div>
 
 <div class="page" id="pageFavs">
@@ -255,6 +274,8 @@ const OUTER_RE = /\b(KT\d|CR\d|SM\d|BR\d|DA\d|RM\d|IG\d|EN\d|HA\d|UB[3-9]|TW\d|W
 let allProperties = [];
 let userFavIds = new Set();
 let currentUser = null;
+const PAGE_SIZE = 20;
+let visiblePages = 1;
 
 // ═══ Load Data ═══
 async function loadProperties() {
@@ -362,6 +383,7 @@ function renderCards() {
       const chip = e.target.closest('.fp-chip');
       if (!chip) return;
       chip.classList.toggle('on');
+      visiblePages = 1;
       onFilterChange();
     });
   });
@@ -498,7 +520,7 @@ function showLoginToast() {
   if (!t) {
     t = document.createElement('div');
     t.id = 'loginToast';
-    t.innerHTML = '<div class="toast-bg" onclick="dismissToast()"></div><div class="toast-box"><div class="toast-icon">💡</div><div class="toast-msg">登入後即可收藏房源</div><div class="toast-sub">收藏會跨裝置同步，換手機也能看到</div><button class="toast-login" onclick="handleAuth()">Google 登入</button><button class="toast-dismiss" onclick="dismissToast()">稍後再說</button></div>';
+    t.innerHTML = '<div class="toast-bg" onclick="dismissToast()"></div><div class="toast-box"><div class="toast-icon">💡</div><div class="toast-msg">登入解鎖完整功能</div><div class="toast-sub">瀏覽全部房源 + 收藏跨裝置同步</div><button class="toast-login" onclick="handleAuth()">Google 登入</button><button class="toast-dismiss" onclick="dismissToast()">稍後再說</button></div>';
     document.body.appendChild(t);
   }
   t.classList.add('show');
@@ -611,7 +633,12 @@ function onFilterChange() {
     el.style.opacity = (isOpt && !reqs.includes(cri)) ? '0.3' : '1';
   });
 
-  let count = 0;
+  let matchCount = 0;
+  let shownCount = 0;
+  const maxShow = visiblePages * PAGE_SIZE;
+  const loginWall = document.getElementById('loginWall');
+  const loadMoreWrap = document.getElementById('loadMoreWrap');
+
   document.querySelectorAll('#searchGrid .card').forEach(c => {
     const price = +c.dataset.price || 0;
     const src = c.dataset.src;
@@ -637,13 +664,39 @@ function onFilterChange() {
       scBar.style.width = pct + '%'; scBar.style.background = color;
     }
     c.dataset.dynsc = earned;
-    c.style.display = ok ? '' : 'none';
-    if (ok) count++;
+    if (ok) {
+      matchCount++;
+      if (shownCount < maxShow) { c.style.display = ''; shownCount++; }
+      else { c.style.display = 'none'; }
+    } else {
+      c.style.display = 'none';
+    }
   });
-  document.getElementById('filterCount').textContent = count + ' 間房源';
+
+  // Show login wall or load more
+  const hasMore = matchCount > shownCount;
+  if (hasMore && !currentUser) {
+    loginWall.style.display = '';
+    loadMoreWrap.style.display = 'none';
+  } else if (hasMore && currentUser) {
+    loginWall.style.display = 'none';
+    loadMoreWrap.style.display = '';
+    document.getElementById('loadMoreBtn').textContent = '載入更多房源（還有 ' + (matchCount - shownCount) + ' 間）';
+  } else {
+    loginWall.style.display = 'none';
+    loadMoreWrap.style.display = 'none';
+  }
+
+  document.getElementById('filterCount').textContent = shownCount + ' / ' + matchCount + ' 間房源';
+}
+
+function loadMoreCards() {
+  visiblePages++;
+  onFilterChange();
 }
 
 function resetFilters() {
+  visiblePages = 1;
   const pmn = document.getElementById('priceMin'), pmx = document.getElementById('priceMax');
   pmn.value = pmn.min; pmx.value = pmx.max;
   document.getElementById('scoreMin').value = 0;
