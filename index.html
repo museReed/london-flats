@@ -809,11 +809,21 @@ async function renderFavPage() {
   loginPrompt.style.display = 'none';
 
   const favCards = [];
+  const activeIds = new Set(allProperties.map(p => p.id));
   document.querySelectorAll('#searchGrid .card').forEach(c => {
     if (userFavIds.has(c.dataset.id)) favCards.push(c);
   });
 
-  if (favCards.length === 0) {
+  // Find removed favorites (fav IDs not in active properties)
+  const removedFavIds = [...userFavIds].filter(id => !activeIds.has(id));
+  let removedProps = [];
+  if (removedFavIds.length > 0) {
+    const { data } = await sb.from('properties').select('*').in('id', removedFavIds);
+    removedProps = data || [];
+  }
+
+  const totalFavs = favCards.length + removedProps.length;
+  if (totalFavs === 0) {
     empty.style.display = ''; mapEl.style.display = 'none'; statsEl.innerHTML = '';
     if (favMap) { favMap.remove(); favMap = null; } return;
   }
@@ -821,10 +831,12 @@ async function renderFavPage() {
   empty.style.display = 'none'; mapEl.style.display = '';
   const prices = favCards.map(c => +c.dataset.price).filter(p => p > 0);
   const avgPrice = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
-  statsEl.innerHTML = '<div class="stat"><div class="stat-n">' + favCards.length + '</div><div class="stat-l">收藏數</div></div>' +
+  const removedCount = removedProps.length;
+  statsEl.innerHTML = '<div class="stat"><div class="stat-n">' + totalFavs + '</div><div class="stat-l">收藏數</div></div>' +
     '<div class="stat"><div class="stat-n">£' + avgPrice + '</div><div class="stat-l">平均租金</div></div>' +
     '<div class="stat"><div class="stat-n">£' + (prices.length ? Math.min(...prices) : 0) + '</div><div class="stat-l">最低</div></div>' +
-    '<div class="stat"><div class="stat-n">£' + (prices.length ? Math.max(...prices) : 0) + '</div><div class="stat-l">最高</div></div>';
+    '<div class="stat"><div class="stat-n">£' + (prices.length ? Math.max(...prices) : 0) + '</div><div class="stat-l">最高</div></div>' +
+    (removedCount > 0 ? '<div class="stat"><div class="stat-n" style="color:var(--rd)">' + removedCount + '</div><div class="stat-l">已下架</div></div>' : '');
 
   if (favMap) { favMap.remove(); favMap = null; }
   favMap = L.map('favMap', { zoomControl: true, scrollWheelZoom: true }).setView([51.505, -0.09], 12);
@@ -855,6 +867,31 @@ async function renderFavPage() {
     const heart = clone.querySelector('.heart');
     if (heart) heart.onclick = function() { toggleFav(this); };
     grid.appendChild(clone);
+  });
+
+  // Render removed favorites
+  removedProps.forEach(p => {
+    const addr = p.full_address || p.address || '未知地址';
+    const price = p.price_num || 0;
+    const beds = p.beds ? p.beds + ' Bed' : '';
+    const src = p.source || '';
+    const link = p.link || '#';
+    const imgUrl = (p.images && p.images[0]) ? p.images[0] : '';
+    const imgHtml = imgUrl ? '<img src="' + imgUrl + '" style="width:100%;height:180px;object-fit:cover;border-radius:10px 10px 0 0;opacity:.5;filter:grayscale(.6)"/>' : '<div style="height:180px;background:var(--bd);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;color:var(--mt)">無圖片</div>';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.id = p.id;
+    card.style.opacity = '.7';
+    card.innerHTML = '<div style="position:relative">' + imgHtml +
+      '<div style="position:absolute;top:8px;left:8px;background:var(--rd);color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700">已下架</div>' +
+      '<button class="heart active" onclick="toggleFav(this)" style="position:absolute;top:8px;right:8px">❤️</button></div>' +
+      '<div style="padding:12px"><div class="addr">📍 ' + addr + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:6px;font-size:.78rem;color:var(--mt)">' +
+      (price ? '<span>£' + price + ' pcm</span>' : '') +
+      (beds ? '<span>' + beds + '</span>' : '') +
+      '<span style="font-size:.65rem;background:var(--bd);padding:1px 6px;border-radius:3px">' + src + '</span></div>' +
+      '<a href="' + link + '" target="_blank" class="detail-link" style="margin-top:8px;display:block;text-align:center;padding:8px;border:1px solid var(--bd);border-radius:6px;color:var(--mt);font-size:.75rem;text-decoration:none">查看原始連結 →</a></div>';
+    grid.appendChild(card);
   });
 }
 
