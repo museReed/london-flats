@@ -500,7 +500,7 @@ function renderCard(p) {
     '<div class="ct"><span class="pr">' + p.price + '</span><span class="sr" style="background:' + ss.bg + ';color:' + ss.color + '">' + p.source + '</span></div>' +
     '<div class="ar"><span class="ai">📍</span><div class="at">' + addr + '</div></div>' +
     '<button class="mb" onclick="openRoute(\'' + safeAddr + '\',' + (p.lat||0) + ',' + (p.lng||0) + ')">🗺️ 查看路線</button>' +
-    '<div class="meta">' + [beds, baths, p.furnished==='Yes'?'Furnished':''].filter(Boolean).map(x => '<span class="ch">' + x + '</span>').join('') + '</div>' +
+    '<div class="meta">' + [beds, baths, p.furnished==='Yes'?'Furnished':'', p.first_seen ? '📅 ' + p.first_seen.slice(0,10) : ''].filter(Boolean).map(x => '<span class="ch">' + x + '</span>').join('') + '</div>' +
     '<div class="scr"><span class="sn sc-num">' + sc + '/' + st + '</span><div class="st"><div class="sb-bar sc-bar" style="width:' + pct + '%;background:' + sColor + '"></div></div></div>' +
     '<div class="cg"><span class="cg-item" data-cri="kitchen">' + badge(c.kitchen) + ' 廚房</span> <span class="cg-item" data-cri="zone3">' + badge(c.zone3) + ' Zone≤3</span> <span class="cg-item" data-cri="shortlet">' + badge(c.shortLet) + ' Short</span> <span class="cg-item" data-cri="furnished">' + badge(c.furnished) + ' 傢俱</span></div>' +
     (features.length ? '<div class="ft">' + features.map(f => '<span class="fg">' + f + '</span>').join('') + '</div>' : '') +
