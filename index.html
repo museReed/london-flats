@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJPqMmGsAlUbozu4r6mdF1PXTpmkNpWzQ&libraries=places&loading=async"><\/script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0c111b;--cd:#161d2e;--bd:#252f45;--tx:#e0e6f0;--mt:#7b8ba8;--ac:#38bdf8;--gn:#4ade80;--rd:#f87171;--yw:#fbbf24}
@@ -218,10 +219,12 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
   .grid{grid-template-columns:1fr;gap:10px}
   #favMap{height:300px}
 }
-#destSuggestions li{padding:8px 12px;font-size:.78rem;cursor:pointer;border-bottom:1px solid var(--bd);transition:background .1s}
-#destSuggestions li:last-child{border-bottom:none}
-#destSuggestions li:hover,#destSuggestions li.active{background:rgba(56,189,248,.12);color:var(--ac)}
-#destSuggestions li small{display:block;font-size:.65rem;color:var(--mt);margin-top:1px}
+.pac-container{background:var(--cd)!important;border:1px solid var(--bd)!important;border-radius:6px!important;font-family:inherit!important;margin-top:4px!important}
+.pac-item{padding:8px 12px!important;border-bottom:1px solid var(--bd)!important;color:var(--tx)!important;font-size:.78rem!important;cursor:pointer!important;line-height:1.4!important}
+.pac-item:hover,.pac-item-selected{background:rgba(56,189,248,.12)!important}
+.pac-item-query{color:var(--ac)!important;font-size:.78rem!important}
+.pac-matched{font-weight:700!important}
+.pac-icon{display:none!important}
 </style>
 </head>
 <body>
@@ -290,7 +293,7 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
   <div class="fp-sec"><h4>✅ 條件要求</h4><div class="fp-chips" id="reqChips"><div class="fp-chip" data-val="kitchen">🍳 可開伙</div><div class="fp-chip" data-val="furnished">🪑 有傢俱</div><div class="fp-chip" data-val="zone3">📍 Zone≤3</div><div class="fp-chip" data-val="shortlet">📅 Short Let</div></div></div>
   <div class="fp-sec"><h4>⭐ 最低符合度</h4><div class="fp-range"><span class="fp-val" id="scoreVal">0/0</span><input type="range" id="scoreMin" min="0" max="4" step="1" value="0" oninput="onFilterChange()"/></div><div class="fp-score-tags" id="scoreTags"></div></div>
   <div class="fp-sec"><h4>🏷️ 特色篩選</h4><div class="fp-chips" id="featChips"><div class="fp-chip" data-val="balcony">Balcony</div><div class="fp-chip" data-val="parking">Parking</div><div class="fp-chip" data-val="garden">Garden</div><div class="fp-chip" data-val="gym">Gym</div><div class="fp-chip" data-val="bills included">Bills Included</div><div class="fp-chip" data-val="dishwasher">Dishwasher</div><div class="fp-chip" data-val="washer">Washer</div></div></div>
-  <div class="fp-sec"><h4>🚇 通勤目的地</h4><div style="position:relative"><div style="display:flex;gap:6px;align-items:center"><input type="text" id="destInput" placeholder="輸入地點，如 King's Cross Station" value="" autocomplete="off" style="flex:1;padding:6px 10px;border-radius:5px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:.78rem;outline:none" oninput="onDestInput(this.value)" onfocus="this.style.borderColor='var(--ac)'" onblur="setTimeout(()=>{this.style.borderColor='var(--bd)';hideDestSuggestions()},200)"/><button class="fp-btn ghost" onclick="clearDestination()" style="white-space:nowrap">清除</button></div><ul id="destSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;margin:4px 0 0;padding:0;list-style:none;background:var(--cd);border:1px solid var(--bd);border-radius:6px;max-height:200px;overflow-y:auto;z-index:50"></ul></div><div id="destStatus" style="font-size:.7rem;color:var(--mt);margin-top:4px"></div></div>
+  <div class="fp-sec"><h4>🚇 通勤目的地</h4><div style="display:flex;gap:6px;align-items:center"><input type="text" id="destInput" placeholder="輸入地點，如 King's Cross Station" value="" style="flex:1;padding:6px 10px;border-radius:5px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:.78rem;outline:none" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd)'"/><button class="fp-btn ghost" onclick="clearDestination()" style="white-space:nowrap">清除</button></div><div id="destStatus" style="font-size:.7rem;color:var(--mt);margin-top:4px"></div></div>
   </div>
   <div class="fp-actions"><button class="fp-btn primary" onclick="onFilterChange();closeDrawer()">套用篩選</button><button class="fp-btn ghost" onclick="resetFilters()">重置全部</button></div>
 </div>
@@ -870,52 +873,8 @@ function openRoute(addr, lat, lng) {
 }
 function closeMap() { document.getElementById('mm').classList.remove('open'); document.getElementById('mf').src = ''; document.body.style.overflow = ''; }
 
-// ═══ Destination Autocomplete (PhotonSearch) ═══
-let _destTimer = null;
-let _destIdx = -1;
-
-function onDestInput(val) {
-  clearTimeout(_destTimer);
-  val = val.trim();
-  if (val.length < 2) { hideDestSuggestions(); return; }
-  _destTimer = setTimeout(() => fetchDestSuggestions(val), 300);
-}
-
-async function fetchDestSuggestions(query) {
-  try {
-    const res = await fetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(query) + '&limit=6&lang=en&lat=51.5&lon=-0.1');
-    const data = await res.json();
-    const items = (data.features || []).map(f => {
-      const p = f.properties || {};
-      const parts = [p.name, p.street, p.city || p.county, p.state, p.country].filter(Boolean);
-      return { label: parts.join(', '), name: p.name || '', sub: parts.slice(1).join(', ') };
-    });
-    renderDestSuggestions(items);
-  } catch (e) { console.warn('Autocomplete error:', e); }
-}
-
-function renderDestSuggestions(items) {
-  const ul = document.getElementById('destSuggestions');
-  if (!items.length) { hideDestSuggestions(); return; }
-  _destIdx = -1;
-  ul.innerHTML = items.map((it, i) =>
-    '<li onmousedown="selectDestination(this)" data-val="' + it.label.replace(/"/g, '&quot;') + '">' +
-    it.name + (it.sub ? '<small>' + it.sub + '</small>' : '') + '</li>'
-  ).join('');
-  ul.style.display = 'block';
-}
-
-function hideDestSuggestions() {
-  const ul = document.getElementById('destSuggestions');
-  if (ul) ul.style.display = 'none';
-}
-
-function selectDestination(li) {
-  const val = li.dataset.val;
-  document.getElementById('destInput').value = val;
-  hideDestSuggestions();
-  applyDestination(val);
-}
+// ═══ Destination Autocomplete (Google Places) ═══
+let _placesAutocomplete = null;
 
 function applyDestination(val) {
   if (!val) return;
@@ -930,7 +889,6 @@ function clearDestination() {
   localStorage.removeItem('lfDestination');
   document.getElementById('destInput').value = '';
   document.getElementById('destStatus').textContent = '';
-  hideDestSuggestions();
   document.querySelectorAll('.mb').forEach(btn => { btn.textContent = '🗺️ 查看路線'; });
 }
 
@@ -943,15 +901,22 @@ function initDestination() {
     document.getElementById('destStatus').textContent = '✅ 已設定：' + dest;
     document.querySelectorAll('.mb').forEach(btn => { btn.textContent = '🚇 查看通勤路線'; });
   }
-  // Keyboard navigation for suggestions
+  // Google Places Autocomplete
+  if (input && typeof google !== 'undefined' && google.maps && google.maps.places) {
+    _placesAutocomplete = new google.maps.places.Autocomplete(input, {
+      types: ['establishment', 'geocode'],
+      componentRestrictions: { country: 'gb' },
+      fields: ['formatted_address', 'name']
+    });
+    _placesAutocomplete.addListener('place_changed', function() {
+      const place = _placesAutocomplete.getPlace();
+      const val = place.name || place.formatted_address || input.value;
+      applyDestination(val);
+    });
+  }
+  // Fallback: Enter key applies typed text directly
   if (input) input.addEventListener('keydown', function(e) {
-    const ul = document.getElementById('destSuggestions');
-    const lis = ul ? [...ul.querySelectorAll('li')] : [];
-    if (!lis.length || ul.style.display === 'none') return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); _destIdx = Math.min(_destIdx + 1, lis.length - 1); lis.forEach((l,i) => l.classList.toggle('active', i === _destIdx)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); _destIdx = Math.max(_destIdx - 1, 0); lis.forEach((l,i) => l.classList.toggle('active', i === _destIdx)); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (_destIdx >= 0 && lis[_destIdx]) selectDestination(lis[_destIdx]); }
-    else if (e.key === 'Escape') { hideDestSuggestions(); }
+    if (e.key === 'Enter') { e.preventDefault(); const v = input.value.trim(); if (v) applyDestination(v); }
   });
 }
 
