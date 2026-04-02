@@ -266,12 +266,14 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
   <button class="sb-toggle" id="sbToggle" onclick="toggleDrawer()"><span class="arrow">▼</span> 篩選</button>
   <span class="sb-spacer"></span>
   <div class="sb-sort-btns">
-    <button class="fb on" data-sort="default" onclick="sortCards('default',this)">符合度</button>
+    <button class="fb on" data-sort="newest" onclick="sortCards('newest',this)">🕐 最新</button>
+    <button class="fb" data-sort="score" onclick="sortCards('score',this)">⭐ 符合度</button>
     <button class="fb" data-sort="price-asc" onclick="sortCards('price-asc',this)">💰低→高</button>
     <button class="fb" data-sort="price-desc" onclick="sortCards('price-desc',this)">💰高→低</button>
   </div>
   <select class="sb-sort-sel" id="sortSel" onchange="sortBySelect(this)">
-    <option value="default">符合度排序</option>
+    <option value="newest">🕐 最新上架</option>
+    <option value="score">⭐ 符合度排序</option>
     <option value="price-asc">💰 價格低→高</option>
     <option value="price-desc">💰 價格高→低</option>
   </select>
@@ -282,8 +284,9 @@ footer{text-align:center;padding:20px 0;color:var(--mt);font-size:.7rem}
   <div class="fp-sec"><h4>🏠 平台</h4><div class="fp-chips" id="srcChips"></div></div>
   <div class="fp-sec"><h4>🛏️ 房型</h4><div class="fp-chips" id="typeChips"><div class="fp-chip on" data-val="studio">Studio</div><div class="fp-chip on" data-val="1bed">1 Bed</div><div class="fp-chip on" data-val="2bed">2 Bed</div><div class="fp-chip on" data-val="other">其他</div></div></div>
   <div class="fp-sec"><h4>✅ 條件要求</h4><div class="fp-chips" id="reqChips"><div class="fp-chip" data-val="kitchen">🍳 可開伙</div><div class="fp-chip" data-val="furnished">🪑 有傢俱</div><div class="fp-chip" data-val="zone3">📍 Zone≤3</div><div class="fp-chip" data-val="shortlet">📅 Short Let</div></div></div>
-  <div class="fp-sec"><h4>⭐ 最低符合度</h4><div class="fp-range"><span class="fp-val" id="scoreVal">0/6</span><input type="range" id="scoreMin" min="0" max="6" step="1" value="0" oninput="onFilterChange()"/></div><div class="fp-score-tags" id="scoreTags"></div></div>
+  <div class="fp-sec"><h4>⭐ 最低符合度</h4><div class="fp-range"><span class="fp-val" id="scoreVal">0/0</span><input type="range" id="scoreMin" min="0" max="4" step="1" value="0" oninput="onFilterChange()"/></div><div class="fp-score-tags" id="scoreTags"></div></div>
   <div class="fp-sec"><h4>🏷️ 特色篩選</h4><div class="fp-chips" id="featChips"><div class="fp-chip" data-val="balcony">Balcony</div><div class="fp-chip" data-val="parking">Parking</div><div class="fp-chip" data-val="garden">Garden</div><div class="fp-chip" data-val="gym">Gym</div><div class="fp-chip" data-val="bills included">Bills Included</div><div class="fp-chip" data-val="dishwasher">Dishwasher</div><div class="fp-chip" data-val="washer">Washer</div></div></div>
+  <div class="fp-sec"><h4>🚇 通勤目的地</h4><div style="display:flex;gap:6px;align-items:center"><input type="text" id="destInput" placeholder="輸入地點，如 King's Cross Station" value="" style="flex:1;padding:6px 10px;border-radius:5px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:.78rem;outline:none" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd)'"/><button class="fp-btn primary" onclick="setDestination()" style="white-space:nowrap">設定</button><button class="fp-btn ghost" onclick="clearDestination()" style="white-space:nowrap">清除</button></div><div id="destStatus" style="font-size:.7rem;color:var(--mt);margin-top:4px"></div></div>
   </div>
   <div class="fp-actions"><button class="fp-btn primary" onclick="onFilterChange();closeDrawer()">套用篩選</button><button class="fp-btn ghost" onclick="resetFilters()">重置全部</button></div>
 </div>
@@ -321,9 +324,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ═══ Config ═══
-const BUDGET = { min: 1500, max: 2750 };
-const BEDS_OK = [0,1,2];
-const KINGS_COLLEGE = "King's College London, Strand, London WC2R 2LS";
+let USER_DESTINATION = localStorage.getItem('lfDestination') || '';
 const SOURCE_ORDER = ["OpenRent","Rightmove","OnTheMarket","Gumtree","SpareRoom","Zoopla"];
 const SOURCE_STYLES = {
   'Rightmove': { bg: '#00DEB6', color: '#000' },
@@ -357,8 +358,8 @@ async function loadProperties() {
     p._scoreTotal = scorable.length;
   });
 
-  // Sort by score desc, then price asc
-  allProperties.sort((a, b) => b._score - a._score || (a.price_num||0) - (b.price_num||0));
+  // Sort by newest first, then price asc
+  allProperties.sort((a, b) => (b.first_seen||'').localeCompare(a.first_seen||'') || (a.price_num||0) - (b.price_num||0));
 
   // Setup price range
   const prices = allProperties.map(p => p.price_num).filter(p => p > 0);
@@ -425,8 +426,6 @@ function checkCriteria(p) {
   else if (p.has_kitchen === 0) kitchen = false;
   else kitchen = 'unknown';
   return {
-    budget: p.price_num >= BUDGET.min && p.price_num <= BUDGET.max,
-    type: BEDS_OK.includes(p.beds),
     kitchen,
     zone3: !OUTER_RE.test(addr),
     shortLet: p.short_let === 1,
@@ -462,7 +461,7 @@ function renderCard(p) {
   const sc = p._score;
   const st = p._scoreTotal;
   const pct = st > 0 ? Math.round((sc / st) * 100) : 0;
-  const sColor = sc >= 5 ? '#4ade80' : sc >= (st-1) ? '#4ade80' : sc >= 3 ? '#fbbf24' : '#f87171';
+  const sColor = (st > 0 && sc >= st - 1) ? '#4ade80' : sc >= Math.ceil(st / 2) ? '#fbbf24' : '#f87171';
   const ss = SOURCE_STYLES[p.source] || { bg: '#666', color: '#fff' };
   const addr = p._displayAddr || 'Address on listing';
   const beds = p.beds === 0 ? 'Studio' : p.beds > 0 ? p.beds + ' Bed' : '?';
@@ -490,16 +489,16 @@ function renderCard(p) {
   }
 
   const safeAddr = addr.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-  return '<div class="card" data-id="' + p.id + '" data-src="' + p.source.toLowerCase().replace(/\s/g,'') + '" data-t="' + dt + '" data-sc="' + sc + '" data-st="' + st + '" data-price="' + (p.price_num||0) + '" data-budget="' + (c.budget?1:0) + '" data-typematch="' + (c.type?1:0) + '" data-furn="' + (c.furnished?1:0) + '" data-kitchen="' + (c.kitchen===true?1:c.kitchen==='unknown'?'u':0) + '" data-zone3="' + (c.zone3?1:0) + '" data-short="' + (c.shortLet?1:0) + '" data-feat="' + features.join(',').toLowerCase() + '" data-addr="' + safeAddr + '" data-beds="' + beds + '" data-link="' + p.link + '" data-lat="' + (p.lat||0) + '" data-lng="' + (p.lng||0) + '">' +
+  return '<div class="card" data-id="' + p.id + '" data-src="' + p.source.toLowerCase().replace(/\s/g,'') + '" data-t="' + dt + '" data-sc="' + sc + '" data-st="' + st + '" data-price="' + (p.price_num||0) + '" data-furn="' + (c.furnished?1:0) + '" data-kitchen="' + (c.kitchen===true?1:c.kitchen==='unknown'?'u':0) + '" data-zone3="' + (c.zone3?1:0) + '" data-short="' + (c.shortLet?1:0) + '" data-feat="' + features.join(',').toLowerCase() + '" data-addr="' + safeAddr + '" data-beds="' + beds + '" data-link="' + p.link + '" data-lat="' + (p.lat||0) + '" data-lng="' + (p.lng||0) + '" data-ts="' + (p.first_seen||'') + '">' +
     '<button class="heart" onclick="toggleFav(this)" title="加入最愛">🤍</button>' +
     imageHtml +
     '<div class="cb">' +
     '<div class="ct"><span class="pr">' + p.price + '</span><span class="sr" style="background:' + ss.bg + ';color:' + ss.color + '">' + p.source + '</span></div>' +
     '<div class="ar"><span class="ai">📍</span><div class="at">' + addr + '</div></div>' +
-    '<button class="mb" onclick="openRoute(\'' + safeAddr + '\',' + (p.lat||0) + ',' + (p.lng||0) + ')">🗺️ 到 King\'s College 路線</button>' +
+    '<button class="mb" onclick="openRoute(\'' + safeAddr + '\',' + (p.lat||0) + ',' + (p.lng||0) + ')">🗺️ 查看路線</button>' +
     '<div class="meta">' + [beds, baths, p.furnished==='Yes'?'Furnished':''].filter(Boolean).map(x => '<span class="ch">' + x + '</span>').join('') + '</div>' +
     '<div class="scr"><span class="sn sc-num">' + sc + '/' + st + '</span><div class="st"><div class="sb-bar sc-bar" style="width:' + pct + '%;background:' + sColor + '"></div></div></div>' +
-    '<div class="cg"><span class="cg-item" data-cri="budget">' + badge(c.budget) + ' 預算</span> <span class="cg-item" data-cri="type">' + badge(c.type) + ' 房型</span> <span class="cg-item" data-cri="kitchen">' + badge(c.kitchen) + ' 廚房</span> <span class="cg-item" data-cri="zone3">' + badge(c.zone3) + ' Zone≤3</span> <span class="cg-item" data-cri="shortlet">' + badge(c.shortLet) + ' Short</span> <span class="cg-item" data-cri="furnished">' + badge(c.furnished) + ' 傢俱</span></div>' +
+    '<div class="cg"><span class="cg-item" data-cri="kitchen">' + badge(c.kitchen) + ' 廚房</span> <span class="cg-item" data-cri="zone3">' + badge(c.zone3) + ' Zone≤3</span> <span class="cg-item" data-cri="shortlet">' + badge(c.shortLet) + ' Short</span> <span class="cg-item" data-cri="furnished">' + badge(c.furnished) + ' 傢俱</span></div>' +
     (features.length ? '<div class="ft">' + features.map(f => '<span class="fg">' + f + '</span>').join('') + '</div>' : '') +
     '<a class="vb" href="' + p.link + '" target="_blank">查看完整房源 →</a>' +
     '</div></div>';
@@ -636,6 +635,7 @@ function sortCards(mode, btn) {
   cards.sort((a, b) => {
     if (mode === 'price-asc') return (+a.dataset.price || 9999) - (+b.dataset.price || 9999);
     if (mode === 'price-desc') return (+b.dataset.price || 0) - (+a.dataset.price || 0);
+    if (mode === 'newest') return (b.dataset.ts || '').localeCompare(a.dataset.ts || '') || (+a.dataset.price) - (+b.dataset.price);
     return (+b.dataset.dynsc || +b.dataset.sc) - (+a.dataset.dynsc || +a.dataset.sc) || (+a.dataset.price) - (+b.dataset.price);
   });
   cards.forEach(c => grid.appendChild(c));
@@ -669,7 +669,7 @@ function switchPage(page, tab) {
 function getActiveVals(id) { return [...document.querySelectorAll('#' + id + ' .fp-chip.on')].map(c => c.dataset.val); }
 
 function calcScore(c, reqs) {
-  const criteria = [{ key: 'budget', val: c.dataset.budget }, { key: 'type', val: c.dataset.typematch }];
+  const criteria = [];
   const optMap = { kitchen: 'kitchen', furnished: 'furn', zone3: 'zone3', shortlet: 'short' };
   for (const r of reqs) { if (optMap[r]) criteria.push({ key: r, val: c.dataset[optMap[r]] }); }
   let earned = 0, total = 0;
@@ -687,7 +687,7 @@ function onFilterChange() {
   const types = getActiveVals('typeChips');
   const reqs = getActiveVals('reqChips');
   const feats = getActiveVals('featChips');
-  const sliderMax = 2 + reqs.length;
+  const sliderMax = reqs.length;
   const scoreSlider = document.getElementById('scoreMin');
   scoreSlider.max = sliderMax;
   if (+scoreSlider.value > sliderMax) scoreSlider.value = sliderMax;
@@ -697,14 +697,13 @@ function onFilterChange() {
   // Show which criteria are counted in score
   const reqLabels = { kitchen: '🍳 可開伙', furnished: '🪑 有傢俱', zone3: '📍 Zone≤3', shortlet: '📅 Short Let' };
   const scoreTags = document.getElementById('scoreTags');
-  let tagsHtml = '<span class="fp-score-tag">💰 預算</span><span class="fp-score-tag">🛏️ 房型</span>';
+  let tagsHtml = '';
   reqs.forEach(r => { if (reqLabels[r]) tagsHtml += '<span class="fp-score-tag optional">' + reqLabels[r] + '</span>'; });
   scoreTags.innerHTML = tagsHtml;
 
   document.querySelectorAll('#pageSearch .cg-item').forEach(el => {
     const cri = el.dataset.cri;
-    const isOpt = ['kitchen', 'zone3', 'shortlet', 'furnished'].includes(cri);
-    el.style.opacity = (isOpt && !reqs.includes(cri)) ? '0.3' : '1';
+    el.style.opacity = !reqs.includes(cri) ? '0.3' : '1';
   });
 
   let matchCount = 0;
@@ -856,11 +855,42 @@ async function renderFavPage() {
 function openRoute(addr, lat, lng) {
   const m = document.getElementById('mm'), f = document.getElementById('mf'), t = document.getElementById('mt');
   const origin = (lat && lng && lat !== 0) ? lat + ',' + lng : addr + ', London, UK';
-  t.textContent = '🚇 ' + addr + " → King's College";
-  f.src = 'https://maps.google.com/maps?saddr=' + encodeURIComponent(origin) + '&daddr=' + encodeURIComponent(KINGS_COLLEGE) + '&dirflg=r&output=embed';
+  if (USER_DESTINATION) {
+    t.textContent = '🚇 ' + addr + ' → ' + USER_DESTINATION;
+    f.src = 'https://maps.google.com/maps?saddr=' + encodeURIComponent(origin) + '&daddr=' + encodeURIComponent(USER_DESTINATION) + '&dirflg=r&output=embed';
+  } else {
+    t.textContent = '📍 ' + addr;
+    f.src = 'https://maps.google.com/maps?q=' + encodeURIComponent(origin) + '&output=embed&z=15';
+  }
   m.classList.add('open'); document.body.style.overflow = 'hidden';
 }
 function closeMap() { document.getElementById('mm').classList.remove('open'); document.getElementById('mf').src = ''; document.body.style.overflow = ''; }
+
+function setDestination() {
+  const input = document.getElementById('destInput');
+  const val = input.value.trim();
+  if (!val) return;
+  USER_DESTINATION = val;
+  localStorage.setItem('lfDestination', val);
+  document.getElementById('destStatus').textContent = '✅ 已設定：' + val;
+  document.querySelectorAll('.mb').forEach(btn => { btn.textContent = '🚇 查看通勤路線'; });
+}
+function clearDestination() {
+  USER_DESTINATION = '';
+  localStorage.removeItem('lfDestination');
+  document.getElementById('destInput').value = '';
+  document.getElementById('destStatus').textContent = '';
+  document.querySelectorAll('.mb').forEach(btn => { btn.textContent = '🗺️ 查看路線'; });
+}
+function initDestination() {
+  const dest = localStorage.getItem('lfDestination') || '';
+  if (dest) {
+    USER_DESTINATION = dest;
+    document.getElementById('destInput').value = dest;
+    document.getElementById('destStatus').textContent = '✅ 已設定：' + dest;
+    document.querySelectorAll('.mb').forEach(btn => { btn.textContent = '🚇 查看通勤路線'; });
+  }
+}
 
 // ═══ Gallery ═══
 function galNav(btn, dir) {
@@ -910,6 +940,7 @@ function populateLandingStats() {
   }
   await loadProperties();
   populateLandingStats();
+  initDestination();
 })();
 </script>
 </body></html>
