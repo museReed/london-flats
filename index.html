@@ -404,11 +404,8 @@ function buildStats() {
   const statsEl = document.getElementById('statsRow');
   const counts = {};
   SOURCE_ORDER.forEach(s => { counts[s] = allProperties.filter(p => p.source === s).length; });
-  const highMatch = allProperties.filter(p => p._score >= p._scoreTotal - 1 && p._scoreTotal > 0).length;
-
   statsEl.innerHTML = '<div class="stat"><div class="stat-n">' + allProperties.length + '</div><div class="stat-l">總房源</div></div>' +
-    SOURCE_ORDER.map(s => '<div class="stat"><div class="stat-n">' + (counts[s]||0) + '</div><div class="stat-l">' + s + '</div></div>').join('') +
-    '<div class="stat"><div class="stat-n">' + highMatch + '</div><div class="stat-l">⭐高符合</div></div>';
+    SOURCE_ORDER.map(s => '<div class="stat"><div class="stat-n">' + (counts[s]||0) + '</div><div class="stat-l">' + s + '</div></div>').join('');
   document.getElementById('totalBadge').textContent = allProperties.length;
 }
 
@@ -952,13 +949,11 @@ function populateLandingStats() {
   if (!el || !allProperties.length) return;
   const counts = {};
   SOURCE_ORDER.forEach(s => { counts[s] = allProperties.filter(p => p.source === s).length; });
-  const highMatch = allProperties.filter(p => p._score >= p._scoreTotal - 1 && p._scoreTotal > 0).length;
   el.innerHTML =
     '<div class="l-stat accent"><div class="l-stat-n">' + allProperties.length + '</div><div class="l-stat-l">總房源</div></div>' +
     SOURCE_ORDER.filter(s => counts[s] > 0).map(s =>
       '<div class="l-stat"><div class="l-stat-n" style="color:' + (SOURCE_STYLES[s]?.bg || 'var(--tx)') + '">' + counts[s] + '</div><div class="l-stat-l">' + s + '</div></div>'
-    ).join('') +
-    '<div class="l-stat green"><div class="l-stat-n">' + highMatch + '</div><div class="l-stat-l">⭐ 高符合</div></div>';
+    ).join('');
 }
 
 // ═══ Init ═══
