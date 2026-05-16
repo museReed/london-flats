@@ -464,6 +464,9 @@ function renderCards() {
 }
 
 function renderCard(p) {
+  // Skip listings without price
+  if (!p.price_num || p.price_num <= 0) return '';
+
   const c = p._criteria;
   const sc = p._score;
   const st = p._scoreTotal;
@@ -471,10 +474,17 @@ function renderCard(p) {
   const sColor = (st > 0 && sc >= st - 1) ? '#4ade80' : sc >= Math.ceil(st / 2) ? '#fbbf24' : '#f87171';
   const ss = SOURCE_STYLES[p.source] || { bg: '#666', color: '#fff' };
   const addr = p._displayAddr || 'Address on listing';
-  const beds = p.beds === 0 ? 'Studio' : p.beds > 0 ? p.beds + ' Bed' : '?';
+  const beds = p.beds === 0 ? 'Studio' : p.beds > 0 ? p.beds + ' Bed' : '';
   const baths = p.baths > 0 ? p.baths + ' Bath' : '';
   const dt = p.beds === 0 ? 'studio' : p.beds === 1 ? '1bed' : p.beds === 2 ? '2bed' : 'other';
-  const features = (p.features || '').split(', ').filter(Boolean);
+  // Filter out category labels and pure-number values from features
+  const featureBlacklist = /^(price & bills|deposit|rent pcm|bills included|tenant preference|availability|available from|minimum tenancy|maximum tenancy|students only|student friendly|families allowed|pets allowed|smoking allowed|dss allowed|couples allowed|gender preference|references required|id verified|posted|seller type|date available|property type|number of bed|number of bath)$/i;
+  const features = (p.features || '').split(', ').filter(f => {
+    if (!f) return false;
+    if (featureBlacklist.test(f.trim())) return false;
+    if (/^£[d,.]+$/.test(f.trim())) return false;  // Pure price values like "£609.23"
+    return true;
+  });
 
   // Image handling — use image_urls from Supabase (JSONB array)
   let imageUrls = Array.isArray(p.image_urls) ? p.image_urls : [];
@@ -492,7 +502,7 @@ function renderCard(p) {
   } else if (p.image_url) {
     imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + p.image_url + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + ' onerror="this.closest(\'.img-wrap\').classList.add(\'loaded\')" /></div>';
   } else {
-    imageHtml = '<div class="ci-ph">🔗 點擊連結查看圖片</div>';
+    imageHtml = '<div class="ci-ph"><div style="font-size:2.5rem;margin-bottom:8px;opacity:.4">🏠</div><span>暫無圖片</span></div>';
   }
 
   const safeAddr = addr.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
