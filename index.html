@@ -115,6 +115,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .img-wrap .img-loader .spinner{width:24px;height:24px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite}
 .img-wrap .img-loader span{font-size:.65rem;color:var(--mt)}
 .img-wrap.loaded .img-loader{opacity:0;pointer-events:none}
+.img-wrap.img-err::after{content:'🏠 圖片無法載入';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mt);font-size:.8rem;background:var(--bd)}
 .ci{width:100%;height:100%;object-fit:cover;display:block}
 .ci-ph{width:100%;height:220px;background:var(--bd);display:flex;align-items:center;justify-content:center;color:var(--mt);font-size:.8rem}
 .gal{position:relative;width:100%;height:100%}
@@ -448,6 +449,14 @@ function renderCards() {
   const grid = document.getElementById('searchGrid');
   grid.innerHTML = allProperties.map(p => renderCard(p)).join('');
 
+  // Image load timeout — hide spinner after 8s if still loading
+  setTimeout(function() {
+    document.querySelectorAll('.img-wrap:not(.loaded)').forEach(function(w) {
+      w.classList.add('loaded');
+      w.classList.add('img-err');
+    });
+  }, 8000);
+
   // Rebind chip listeners
   document.querySelectorAll('.fp-chips').forEach(group => {
     group.addEventListener('click', e => {
@@ -490,17 +499,18 @@ function renderCard(p) {
   let imageUrls = Array.isArray(p.image_urls) ? p.image_urls : [];
   const loader = '<div class="img-loader"><div class="spinner"></div><span>載入圖片中</span></div>';
   const onLoad = 'onload="this.closest(\'.img-wrap\').classList.add(\'loaded\')"';
+  const onErr = 'onerror="var w=this.closest(\'.img-wrap\');w.classList.add(\'loaded\');w.classList.add(\'img-err\')"';
   let imageHtml;
   if (imageUrls.length > 1) {
     imageHtml = '<div class="img-wrap">' + loader + '<div class="gal" data-idx="0">' +
-      imageUrls.map((img, i) => '<img class="gi' + (i === 0 ? ' active' : '') + '" src="' + img + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + (i === 0 ? onLoad : '') + '/>').join('') +
+      imageUrls.map((img, i) => '<img class="gi' + (i === 0 ? ' active' : '') + '" src="' + img + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + (i === 0 ? onLoad + ' ' + onErr : '') + '/>').join('') +
       '<button class="ga gl" onclick="galNav(this,-1)">‹</button>' +
       '<button class="ga gr" onclick="galNav(this,1)">›</button>' +
       '<span class="gc">1/' + imageUrls.length + '</span></div></div>';
   } else if (imageUrls.length === 1) {
-    imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + imageUrls[0] + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + '/></div>';
+    imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + imageUrls[0] + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + ' ' + onErr + '/></div>';
   } else if (p.image_url) {
-    imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + p.image_url + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + ' onerror="this.closest(\'.img-wrap\').classList.add(\'loaded\')" /></div>';
+    imageHtml = '<div class="img-wrap">' + loader + '<img class="ci" src="' + p.image_url + '" alt="' + addr.replace(/"/g,'&quot;') + '" loading="lazy" ' + onLoad + ' ' + onErr + '/></div>';
   } else {
     imageHtml = '<div class="ci-ph"><div style="font-size:2.5rem;margin-bottom:8px;opacity:.4">🏠</div><span>暫無圖片</span></div>';
   }
